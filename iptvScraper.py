@@ -10,20 +10,23 @@ def getWebSite(url):
 	return r.text
 
 def getIptvs(webSite):
-	soup = BeautifulSoup(webSite, 'html.parser').body.find_all('p')[2].encode("ascii")
-	pTagRemoved = str(soup).replace("<p>", "")
-	pTagRemoved = pTagRemoved.replace("</p>", "")
-	brTagReplaced = pTagRemoved.replace("<br/>\\n", ",")
-	splitted = brTagReplaced.split('#EXTINF:-1,')
-	splitted.pop(0) # b'#EXTM3U
+	text = BeautifulSoup(webSite, 'html.parser').body.text
+	splittedText = text.split('#EXTINF:-1,')
+	splittedText.pop(0) # b'#EXTM3U
+	splittedText.pop()
 
-	return removeEndComma(splitted)
+	return removeEndComma(splittedText)
 
 def removeEndComma(list):
 	iptvs = []
 	for element in list:
-		iptvs.append(element[:-1])
+		iptvs.append(element.replace('\n', ',')[:-1])
+
 	return iptvs
+
+def printList(list):
+	for element in list:
+		print(element.encode('utf-8'))
 
 def generateF4m(iptvs):
 	streamingInfos = Element('streamingInfos')
@@ -47,15 +50,17 @@ def prettify(elem):
 	"""
 	rough_string = ElementTree.tostring(elem, 'utf-8')
 	reparsed = minidom.parseString(rough_string)
-	return reparsed.toprettyxml(indent="  ")
+	return reparsed.toprettyxml(indent="  ").encode('utf-8')
 
 def writeIntoFile(fileName, content):
-	f = open(fileName, 'w')
+	f = open(fileName, 'wb')
 	f.write(content)
 	f.close()
 
-url = 'http://iptv.filmover.com/european-iptv-playlist-29-09-2016/'
+url = 'http://iptv.filmover.com/iptv-italian-and-french-playlist/'
 webSite = getWebSite(url)
 iptvs =  getIptvs(webSite)
+printList(iptvs)
 f4mContent = generateF4m(iptvs)
+#print(f4mContent)
 writeIntoFile('result.xml', f4mContent)
